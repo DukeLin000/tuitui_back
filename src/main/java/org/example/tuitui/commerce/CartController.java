@@ -33,7 +33,7 @@ public class CartController {
     @PostMapping("/cart")
     public CartItem addToCart(@RequestBody AddToCartRequest request) {
         Product product = productRepository.findById(request.productId)
-                .orElseThrow(() -> new RuntimeException("找不到商品!"));
+                .orElseThrow(() -> new RuntimeException("找不到商品"));
 
         CartItem item = new CartItem();
         item.setUserId(request.userId);
