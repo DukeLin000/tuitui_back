@@ -8,6 +8,7 @@ import java.util.List;
 @RestController // 告訴 Spring 這是一個 REST API
 @RequestMapping("/api/users") // API 的根路徑
 @RequiredArgsConstructor // Lombok 神技：自動幫 final 變數生成建構子 (注入 Repository)
+@CrossOrigin(origins = "*") // 【新增這行】解決 CORS 跨域問題，允許前端呼叫
 public class UserController {
 
     private final UserRepository userRepository;

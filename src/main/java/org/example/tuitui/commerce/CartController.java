@@ -10,6 +10,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/commerce")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*") // 【新增這行】允許前端存取購物車與商品 API
 public class CartController {
 
     private final ProductRepository productRepository;

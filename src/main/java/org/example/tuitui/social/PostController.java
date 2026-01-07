@@ -8,6 +8,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*") // 【新增這行】允許前端跨域存取貼文 API
 public class PostController {
 
     private final PostRepository postRepository;
