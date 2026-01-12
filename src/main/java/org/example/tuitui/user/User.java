@@ -47,5 +47,5 @@ public class User extends BaseEntity {
     private Integer likeCount = 0;      // 獲讚 (86)
 
     // --- 狀態 ---
-    private boolean isVerified; // 是否有藍勾勾
+    private boolean isVerified; // 是否有藍勾勾TEST
 }
