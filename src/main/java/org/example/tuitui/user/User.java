@@ -1,16 +1,16 @@
-package org.example.tuitui.user; // 記得確認這行跟你的資料夾結構一致
+package org.example.tuitui.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.tuitui.common.BaseEntity; // 引用你剛剛寫的 BaseEntity
+import org.example.tuitui.common.BaseEntity;
 
 @Getter
 @Setter
-@Entity // 告訴 JPA 這是一個資料庫實體
-@Table(name = "users") // 資料庫裡的表名叫做 "users"
+@Entity
+@Table(name = "users")
 public class User extends BaseEntity {
 
     // --- 帳號資訊 ---
@@ -18,10 +18,16 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String username; // e.g. "@tuituiuser" (唯一 ID)
 
+    // 【新增】Email 欄位 (前端註冊用)
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(nullable = false)
     private String nickname; // e.g. "推推用戶" (顯示名稱)
 
-    private String passwordHash; // 密碼 (加密後存入)
+    // 【修改】建議將 passwordHash 改名為 password
+    // 這樣前端傳來的 JSON { "password": "..." } 才能自動寫入
+    private String password;
 
     @Column(length = 1000)
     private String avatarUrl; // 頭像圖片連結
