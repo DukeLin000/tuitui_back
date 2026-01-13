@@ -1,28 +1,68 @@
 package org.example.tuitui.user;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import java.util.List;
-
-@RestController // 告訴 Spring 這是一個 REST API
-@RequestMapping("/api/users") // API 的根路徑
-@RequiredArgsConstructor // Lombok 神技：自動幫 final 變數生成建構子 (注入 Repository)
-@CrossOrigin(origins = "*") // 【新增這行】解決 CORS 跨域問題，允許前端呼叫
+@RestController
+@RequestMapping("/api/auth")
+// 👇【關鍵修正】改用 originPatterns，這樣搭配 allowCredentials 就不會報錯了
+@CrossOrigin(originPatterns = "*")
 public class UserController {
 
-    private final UserRepository userRepository;
+    @Autowired
+    private UserService userService;
 
-    // 1. 建立新用戶 (POST /api/users)
-    @PostMapping
-    public User createUser(@RequestBody User user) {
-        // 在真實專案這裡應該要加密碼 hash，MVP 先直接存
-        return userRepository.save(user);
+    // 1. 註冊 API
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody Map<String, String> payload) {
+        try {
+            User user = userService.register(
+                    payload.get("email"),
+                    payload.get("password"),
+                    payload.get("name")
+            );
+            return ResponseEntity.ok(convertToDto(user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
-    // 2. 查詢所有用戶 (GET /api/users)
-    @GetMapping
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    // 2. 登入 API
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> payload) {
+        try {
+            User user = userService.login(
+                    payload.get("email"),
+                    payload.get("password")
+            );
+            return ResponseEntity.ok(convertToDto(user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // 3. 取得個人資料
+    @GetMapping("/user/{id}")
+    public ResponseEntity<?> getUser(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(convertToDto(userService.getUserProfile(id)));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    private Map<String, Object> convertToDto(User user) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("id", user.getId());
+        dto.put("email", user.getEmail());
+        dto.put("name", user.getNickname());
+        dto.put("avatar", user.getAvatarUrl());
+        dto.put("bio", user.getBio());
+        dto.put("role", user.isMerchant() ? "merchant" : "user");
+        dto.put("username", user.getUsername());
+        return dto;
     }
 }

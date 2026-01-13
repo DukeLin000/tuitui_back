@@ -1,9 +1,10 @@
-package org.example.tuitui.user; // 確認這行沒紅字
+package org.example.tuitui.user;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
 
-// <User, String> 意思操作 User 表，主鍵 ID 是 String (UUID)
-public interface UserRepository extends JpaRepository<User, String> {
-    // 這裡可以神奇地定義查詢，例如：
-    // Optional<User> findByUsername(String username);
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
+    boolean existsByUsername(String username);
 }
