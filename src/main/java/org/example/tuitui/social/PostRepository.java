@@ -3,8 +3,8 @@ package org.example.tuitui.social;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
-// 1. 將第二個泛型參數從 String 改為 Long (對應 Post 的 @Id 型別)
-public interface PostRepository extends JpaRepository<Post, Long> {
+// 👇 [關鍵修正] 將 ID 類型改回 String (因為 BaseEntity 使用 UUID String)
+public interface PostRepository extends JpaRepository<Post, String> {
 
     // 2. [新增] 查詢所有貼文，並依照建立時間倒序 (新貼文在上面)
     // 這是給首頁動態牆 (PostController.getAllPosts) 用的

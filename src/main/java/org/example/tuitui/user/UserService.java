@@ -13,22 +13,18 @@ public class UserService {
 
     // 註冊邏輯
     public User register(String email, String password, String nickname) {
-        // 1. 檢查 Email 是否重複
         if (userRepository.existsByEmail(email)) {
             throw new RuntimeException("Email 已經被註冊過了！");
         }
 
-        // 2. 建立新用戶
         User user = new User();
         user.setEmail(email);
-        user.setPassword(password); // 注意：實際專案應使用 BCrypt 加密
+        user.setPassword(password);
         user.setNickname(nickname);
 
-        // 3. 自動生成唯一 username (@user_xxxx)
         String baseName = email.split("@")[0];
         user.setUsername("@" + baseName + "_" + UUID.randomUUID().toString().substring(0, 4));
 
-        // 4. 設定預設值
         user.setAvatarUrl("https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100");
         user.setBio("這是一個新用戶");
         user.setFollowingCount(0);
@@ -55,7 +51,8 @@ public class UserService {
     }
 
     // 取得個人資料
-    public User getUserProfile(Long id) {
+    // 👇 [修正] 這裡原本是 Long id，改成 String id
+    public User getUserProfile(String id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("用戶不存在"));
     }

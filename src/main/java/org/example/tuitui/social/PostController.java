@@ -11,7 +11,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
-// 👇【關鍵修正 1】改用 originPatterns，解決 CORS 報錯
 @CrossOrigin(originPatterns = "*")
 public class PostController {
 
@@ -19,13 +18,12 @@ public class PostController {
     private PostRepository postRepository;
 
     @Autowired
-    private UserRepository userRepository; // 【關鍵修正 2】需要這個來查發文者
+    private UserRepository userRepository;
 
     // 1. 發布貼文 (POST /api/posts)
     @PostMapping
     public ResponseEntity<?> createPost(@RequestBody Map<String, String> payload) {
         try {
-            // 解析前端傳來的資料
             String userIdStr = payload.get("userId");
             String content = payload.get("content");
 
@@ -33,16 +31,18 @@ public class PostController {
                 return ResponseEntity.badRequest().body("userId and content are required");
             }
 
-            Long userId = Long.parseLong(userIdStr);
+            // 👇 [關鍵修正] 不需要轉 Long 了，因為現在 ID 是 String (UUID)
+            // Long userId = Long.parseLong(userIdStr); // 這一行已註解掉，避免報錯
 
-            // A. 先找出是誰發的文 (User)
-            User user = userRepository.findById(userId)
+            // A. 直接用字串 ID 找人
+            // (注意：您的 UserRepository 必須已經修正為 JpaRepository<User, String>)
+            User user = userRepository.findById(userIdStr)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // B. 建立貼文物件 (關聯 User)
+            // B. 建立貼文物件
             Post post = new Post(content, user);
 
-            // C. 儲存到資料庫
+            // C. 儲存
             postRepository.save(post);
 
             return ResponseEntity.ok(post);
@@ -52,10 +52,9 @@ public class PostController {
         }
     }
 
-    // 2. 看所有貼文 (首頁動態牆)
+    // 2. 看所有貼文
     @GetMapping
     public List<Post> getAllPosts() {
-        // 【關鍵修正 3】改用時間倒序，新貼文在上面
         return postRepository.findAllByOrderByCreatedAtDesc();
     }
 }

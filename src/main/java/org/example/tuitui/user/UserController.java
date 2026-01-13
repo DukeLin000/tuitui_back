@@ -46,7 +46,8 @@ public class UserController {
 
     // 3. 取得個人資料
     @GetMapping("/user/{id}")
-    public ResponseEntity<?> getUser(@PathVariable Long id) {
+    // 👇 [修正] 這裡原本是 @PathVariable Long id，改成 String id
+    public ResponseEntity<?> getUser(@PathVariable String id) {
         try {
             return ResponseEntity.ok(convertToDto(userService.getUserProfile(id)));
         } catch (RuntimeException e) {
