@@ -6,7 +6,33 @@ spring:
   application:
     name: shenchuan-tuitui-backend
 
-  # --- Database Configuration (PostgreSQL) ---
+  # ======================================================
+  # [新增] Kafka Configuration (即時聊天室與非同步存儲)
+  # ======================================================
+  kafka:
+    bootstrap-servers: localhost:9092 # Kafka 連線地址
+
+    # 生產者設定 (Producer) - 負責發送訊息
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+    # 消費者設定 (Consumer) - 負責接收訊息並存入 DB
+    consumer:
+      group-id: tuitui-backend # 消費者群組 ID
+      auto-offset-reset: earliest # 若無偏移量，從最早的訊息開始消費
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        # 允許反序列化所有 Package 的物件 (安全性設定)
+        spring.json.trusted.packages: "*"
+        # 【關鍵】告訴 Consumer 如何將 JSON 對應回 Java DTO
+        # 格式: "別名:全限定類名"
+        spring.json.type.mapping: "chatMessageDto:org.example.tuitui.chat.ChatMessageDto"
+
+  # ======================================================
+  # Database Configuration (PostgreSQL)
+  # ======================================================
   datasource:
     url: jdbc:postgresql://localhost:5432/tuitui_db
     username: postgres     # 請修改為你的本地帳號
@@ -20,7 +46,9 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
 
-  # --- JPA / Hibernate Configuration ---
+  # ======================================================
+  # JPA / Hibernate Configuration
+  # ======================================================
   jpa:
     # 開發階段用 update，會自動建表；正式環境建議用 validate 或 none (搭配 Flyway/Liquibase)
     hibernate:
@@ -37,7 +65,9 @@ spring:
           order_inserts: true
           order_updates: true
 
-  # --- Redis Configuration (Optional for Phase 1) ---
+  # ======================================================
+  # Redis Configuration
+  # ======================================================
   data:
     redis:
       host: localhost
@@ -51,13 +81,15 @@ spring:
     livereload:
       enabled: true
 
-  # --- Docker Compose Support (因為你勾選了) ---
+  # --- Docker Compose Support ---
   docker:
     compose:
       enabled: true
-      file: compose.yaml # 預設會找專案根目錄的 compose.yaml
+      file: compose.yaml
 
-# --- Logging Strategy ---
+# ======================================================
+# Logging Strategy
+# ======================================================
 logging:
   level:
     root: INFO
@@ -66,7 +98,9 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE # 顯示 SQL 參數綁定值 (?)
 
-# --- Actuator (Health Check) ---
+# ======================================================
+# Actuator (Health Check)
+# ======================================================
 management:
   endpoints:
     web:
