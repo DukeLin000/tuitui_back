@@ -63,9 +63,20 @@ public class ChatController {
                     ChatThread chat = new ChatThread();
                     chat.setUserA(currentUser);
                     chat.setUserB(targetUser);
-                    chat.setLastMessage("開始聊天吧！");
+
+                    // [修改] 提取歡迎訊息為變數，供 Thread 與 Message 共用
+                    String welcomeText = "開始聊天吧！";
+                    chat.setLastMessage(welcomeText);
                     chat.setLastMessageTime(LocalDateTime.now());
                     chatRepository.save(chat);
+
+                    // [新增] 修正聊天室空白問題：建立聊天室時，同步寫入第一則訊息至 Message 表
+                    ChatMessage systemMsg = new ChatMessage();
+                    systemMsg.setThread(chat);
+                    systemMsg.setSender(currentUser); // 預設由發起人傳送
+                    systemMsg.setContent(welcomeText);
+                    messageRepository.save(systemMsg);
+
                     return ResponseEntity.ok(convertToDto(chat));
                 });
     }
@@ -102,7 +113,20 @@ public class ChatController {
         ChatThread thread = chatRepository.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat not found"));
 
-        User sender = thread.getUserA();
+        // [修改] 修正發送者身分錯誤的問題
+        // 舊邏輯：User sender = thread.getUserA(); (若只保留這行，會導致 B 發的訊息也變成 A 發的)
+        // 新邏輯：優先從 payload 獲取 senderId
+
+        User sender;
+        String senderId = payload.get("senderId");
+
+        if (senderId != null) {
+            sender = userRepository.findById(senderId)
+                    .orElseThrow(() -> new RuntimeException("Sender user not found"));
+        } else {
+            // 若前端沒傳 senderId，則使用舊有邏輯作為 Fallback
+            sender = thread.getUserA();
+        }
 
         ChatMessage message = new ChatMessage();
         message.setThread(thread);
