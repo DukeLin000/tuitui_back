@@ -50,6 +50,7 @@ public class ChatController {
         String targetId = payload.get("targetUserId");
         if (targetId == null) return ResponseEntity.badRequest().body("Target User ID required");
 
+        // 注意：這裡維持既有邏輯，抓取 DB 第一個使用者當作目前操作者
         User currentUser = userRepository.findAll().stream().findFirst()
                 .orElseThrow(() -> new RuntimeException("No users in DB"));
 
