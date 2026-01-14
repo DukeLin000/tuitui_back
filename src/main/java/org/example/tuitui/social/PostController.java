@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -21,54 +22,54 @@ public class PostController {
     @Autowired
     private UserRepository userRepository;
 
-    // 1. 發布貼文 (POST /api/posts)
+    // 1. 取得所有貼文 (Feed)
+    @GetMapping
+    public List<PostDto> getAllPosts() {
+        return postRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(PostDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    // 2. [修正] 取得特定用戶的貼文 (Profile)
+    // ❌ 原本錯誤: Long.parseLong(userId)
+    // ✅ 修正後: 直接使用 String userId
+    @GetMapping("/user/{userId}")
+    public List<PostDto> getUserPosts(@PathVariable String userId) {
+        return postRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(PostDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    // 3. 發布貼文
     @PostMapping
     public ResponseEntity<?> createPost(@RequestBody Map<String, String> payload) {
         try {
             String userIdStr = payload.get("userId");
             String content = payload.get("content");
 
-            // 基本驗證
             if (userIdStr == null || content == null) {
                 return ResponseEntity.badRequest().body("userId and content are required");
             }
 
-            // 1. 查找使用者 (使用 UUID String)
+            // ❌ 原本錯誤: userRepository.findById(Long.parseLong(userIdStr))
+            // ✅ 修正後: 直接傳入 String
             User user = userRepository.findById(userIdStr)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // 2. 建立貼文
-            Post post = new Post(content, user);
+            Post post = new Post();
+            post.setContent(content);
+            post.setUser(user);
 
-            // 3. 補上時間 (確保排序正確，新貼文在最上面)
-            LocalDateTime now = LocalDateTime.now();
-            if (post.getCreatedAt() == null) {
-                post.setCreatedAt(now);
-            }
-            if (post.getUpdatedAt() == null) {
-                post.setUpdatedAt(now);
-            }
+            // 時間部分：若 BaseEntity 有設定 @PrePersist，這裡其實可以省略，但手動設也無妨
+            post.setCreatedAt(LocalDateTime.now());
 
-            // 4. 存檔並強制寫入 (Flush) 以便立即取得 DB 狀態
-            post = postRepository.saveAndFlush(post);
+            post = postRepository.save(post);
 
-            // 5. [關鍵修正] 手動回填 userId
-            // 因為 Post 實體的 userId 欄位被設為唯讀 (insertable=false)，
-            // Hibernate 存檔後不會自動更新 Java 物件裡的 userId。
-            // 我們必須手動填入，前端才能收到正確的 JSON 並判斷 "這是我的貼文"。
-            post.setUserId(user.getId());
-
-            return ResponseEntity.ok(post);
+            return ResponseEntity.ok(PostDto.fromEntity(post));
 
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
-    }
-
-    // 2. 看所有貼文 (依照時間倒序)
-    @GetMapping
-    public List<Post> getAllPosts() {
-        return postRepository.findAllByOrderByCreatedAtDesc();
     }
 }
